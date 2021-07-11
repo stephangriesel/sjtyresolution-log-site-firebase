@@ -9,16 +9,26 @@ const admin = require("firebase-admin");
 //   response.send("Hello from Firebase!");
 // });
 
-exports.postComment = functions.https.onCall((data, context) => {
+admin.initializeApp();
+
+exports.postComment = functions.https.onCall(async (data, context) => {
+  checkAuthentication(context);
+  dataValidator(data, {
+    truckId: 'string',
+    text: 'string'
+  });
+
   const db = admin.firestore();
-  return db.collection("publicProfiles").where("userId", "==", context.auth.uid)
-      .limit(1)
-      .get().then((snapshot) => {
-        return db.collection("detailsAndComments").add({
-          text: data.text,
-          username: snapshot.docs[0].ref,
-          dateCreated: new Date(),
-          book: db.collection("trucks").doc(data.truckId),
-        });
-      });
+  const snapshot = await db
+    .collection('publicProfiles')
+    .where('userId', '==', context.auth.uid)
+    .limit(1)
+    .get();
+
+  await db.collection('detailsAndComments').add({
+    text: data.text,
+    username: snapshot.docs[0].id,
+    dateCreated: new Date(),
+    book: db.collection('trucks').doc(data.tru)
+  });
 });
