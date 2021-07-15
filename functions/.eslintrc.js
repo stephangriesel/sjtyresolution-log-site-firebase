@@ -11,5 +11,8 @@ module.exports = {
   rules: {
     indent: 'off',
     'require-jsdoc': 0,
+    "max-len": [2, 200, 4],
+    "func-call-spacing": "off",
+
   },
 };

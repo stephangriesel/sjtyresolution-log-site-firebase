@@ -12,6 +12,11 @@ const admin = require('firebase-admin');
 admin.initializeApp();
 
 exports.postComment = functions.https.onCall(async (data, context) => {
+  checkAuthentication(context);
+  dataValidator(data, {
+    truckId: 'string',
+    text: 'string',
+  });
   const db = admin.firestore();
   const snapshot = await db
     .collection('publicProfiles')
@@ -26,3 +31,23 @@ exports.postComment = functions.https.onCall(async (data, context) => {
     truck: db.collection('trucks').doc(data.truckId),
   });
 });
+
+// https://firebase.google.com/docs/reference/functions/providers_https_#functionserrorcode
+
+function dataValidator(data, validKeys) {
+  if (Object.keys(data).length !== Object.keys(validKeys).length) {
+    throw new functions.https.HttpsError ('invalid-argument', 'Invalid amount of properties');
+  } else {
+    for (const key in data) {
+      if (!validKeys[key] || typeof data[key] !== validKeys[key]) {
+        throw new functions.https.HttpsError ('invalid-argument', 'Data object contains invalid properties');
+      }
+    }
+  }
+}
+
+function checkAuthentication(context) {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Please sign in first');
+  }
+}
