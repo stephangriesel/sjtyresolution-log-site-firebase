@@ -1,5 +1,6 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+// const { user } = require('firebase-functions/lib/providers/auth');
 
 // // Create and Deploy Your First Cloud Functions
 // // https://firebase.google.com/docs/functions/write-firebase-functions
@@ -10,6 +11,29 @@ const admin = require('firebase-admin');
 // });
 
 admin.initializeApp();
+
+exports.createPublicProfile = functions.https.onCall(async (data, context) => {
+  checkAuthentication(context);
+  dataValidator(data, {
+    username: 'string',
+  });
+
+  const userProfile = await admin.firestore().collection('publicProfiles')
+    .where('userId', '==', context.auth.uid).limit(1).get();
+  if (!userProfile.empty) {
+    throw new functions.https.HttpsError('already-exists', 'This user already has a profile.');
+  }
+
+  const publicProfile = await admin.firestore().collection('publicProfiles').doc(data.username).get();
+
+  if (publicProfile.exists) {
+    throw new functions.https.HttpsError('already-exists', 'This username exist, please pick unique one.');
+  }
+
+  return admin.firestore().collection('publicProfiles').doc(data.username).set({
+    userId: context.auth.uid,
+  });
+});
 
 exports.postComment = functions.https.onCall(async (data, context) => {
   checkAuthentication(context);
