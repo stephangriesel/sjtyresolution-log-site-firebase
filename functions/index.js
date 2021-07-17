@@ -18,16 +18,35 @@ exports.createPublicProfile = functions.https.onCall(async (data, context) => {
     username: 'string',
   });
 
-  const userProfile = await admin.firestore().collection('publicProfiles')
-    .where('userId', '==', context.auth.uid).limit(1).get();
+  const userProfile = await admin
+    .firestore()
+    .collection('publicProfiles')
+    .where('userId', '==', context.auth.uid)
+    .limit(1)
+    .get();
   if (!userProfile.empty) {
-    throw new functions.https.HttpsError('already-exists', 'This user already has a profile.');
+    throw new functions.https.HttpsError(
+      'already-exists',
+      'This user already has a profile.'
+    );
   }
 
-  const publicProfile = await admin.firestore().collection('publicProfiles').doc(data.username).get();
+  const publicProfile = await admin
+    .firestore()
+    .collection('publicProfiles')
+    .doc(data.username)
+    .get();
 
   if (publicProfile.exists) {
-    throw new functions.https.HttpsError('already-exists', 'This username exist, please pick unique one.');
+    throw new functions.https.HttpsError(
+      'already-exists',
+      'This username exist, please pick unique one.'
+    );
+  }
+
+  const user = await admin.auth().getUser(context.auth.uid);
+  if (user.email === functions.config().accounts.admin) {
+    await admin.auth().setCustomUserClaims(context.auth.uid, { admin: true });
   }
 
   return admin.firestore().collection('publicProfiles').doc(data.username).set({
@@ -60,11 +79,17 @@ exports.postComment = functions.https.onCall(async (data, context) => {
 
 function dataValidator(data, validKeys) {
   if (Object.keys(data).length !== Object.keys(validKeys).length) {
-    throw new functions.https.HttpsError ('invalid-argument', 'Invalid amount of properties');
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Invalid amount of properties'
+    );
   } else {
     for (const key in data) {
       if (!validKeys[key] || typeof data[key] !== validKeys[key]) {
-        throw new functions.https.HttpsError ('invalid-argument', 'Data object contains invalid properties');
+        throw new functions.https.HttpsError(
+          'invalid-argument',
+          'Data object contains invalid properties'
+        );
       }
     }
   }
@@ -72,6 +97,9 @@ function dataValidator(data, validKeys) {
 
 function checkAuthentication(context) {
   if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Please sign in first');
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'Please sign in first'
+    );
   }
 }
