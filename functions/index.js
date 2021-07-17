@@ -12,6 +12,29 @@ const admin = require('firebase-admin');
 
 admin.initializeApp();
 
+exports.createDriver = functions.https.onCall(async (data, context) => {
+  checkAuthentication(context, true);
+  dataValidator(data, {
+    driverName: 'string',
+  });
+
+  const driver = await admin
+    .firestore()
+    .collection('drivers')
+    .where('name', '==', data.driverName)
+    .limit(1)
+    .get();
+  if (!driver.empty) {
+    throw new functions.https.HttpsError(
+      'already-exists',
+      'This driver already exists'
+    );
+  }
+  return admin.firestore().collection('drivers').add({
+    name: data.driverName,
+  });
+});
+
 exports.createPublicProfile = functions.https.onCall(async (data, context) => {
   checkAuthentication(context);
   dataValidator(data, {
@@ -46,7 +69,7 @@ exports.createPublicProfile = functions.https.onCall(async (data, context) => {
 
   const user = await admin.auth().getUser(context.auth.uid);
   if (user.email === functions.config().accounts.admin) {
-    await admin.auth().setCustomUserClaims(context.auth.uid, { admin: true });
+    await admin.auth().setCustomUserClaims(context.auth.uid, {admin: true});
   }
 
   return admin.firestore().collection('publicProfiles').doc(data.username).set({
@@ -100,6 +123,11 @@ function checkAuthentication(context) {
     throw new functions.https.HttpsError(
       'unauthenticated',
       'Please sign in first'
+    );
+  } else if (!context.auth.token.admin && admin) {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'Admin permissions required'
     );
   }
 }
