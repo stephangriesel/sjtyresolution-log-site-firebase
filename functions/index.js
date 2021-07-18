@@ -53,7 +53,7 @@ exports.createTruck = functions.https.onCall(async (data, context) => {
     /^data:image\/\w+;base64,/,
     ''
   );
-  const imageBuffer = new Buffer(base64EncodedImageString, 'base64');
+  const imageBuffer = new Buffer.Alloc(base64EncodedImageString, 'base64');
 
   const filename = `truckImages/${data.bookName}.${mimeTypes.detectExtension(
     mimeType
