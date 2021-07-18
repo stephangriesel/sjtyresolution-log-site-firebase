@@ -1,7 +1,7 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const mimeTypes = require('mimetypes');
-const {default: axios} = require('axios');
+const axios = require('axios');
 // const { user } = require('firebase-functions/lib/providers/auth');
 
 // // Create and Deploy Your First Cloud Functions
