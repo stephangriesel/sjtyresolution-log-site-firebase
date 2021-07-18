@@ -42,6 +42,8 @@ exports.createTruck = functions.https.onCall(async (data, context) => {
     truckRegistration: 'string',
     driverId: 'string',
     truckImage: 'string',
+    condition: 'string',
+    odo: 'string',
   });
   const mimeType = data.truckImage.match(
     /data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,.*/
@@ -68,6 +70,8 @@ exports.createTruck = functions.https.onCall(async (data, context) => {
       registration: data.truckRegistration,
       imageUrl: fileUrl,
       driver: admin.firestore().collection('drivers').doc(data.driverId),
+      condition: data.condition,
+      odo: data.odo,
     });
 });
 
