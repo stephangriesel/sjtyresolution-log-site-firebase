@@ -1,5 +1,6 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const mimeTypes = require('mimetypes');
 // const { user } = require('firebase-functions/lib/providers/auth');
 
 // // Create and Deploy Your First Cloud Functions
@@ -33,6 +34,41 @@ exports.createDriver = functions.https.onCall(async (data, context) => {
   return admin.firestore().collection('drivers').add({
     name: data.driverName,
   });
+});
+
+exports.createTruck = functions.https.onCall(async (data, context) => {
+  checkAuthentication(context, true);
+  dataValidator(data, {
+    truckRegistration: 'string',
+    driverId: 'string',
+    truckImage: 'string',
+  });
+  const mimeType = data.truckImage.match(
+    /data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,.*/
+  )[1];
+  const base64EncodedImageString = data.truckImage.replace(
+    /^data:image\/\w+;base64,/,
+    ''
+  );
+  const imageBuffer = new Buffer(base64EncodedImageString, 'base64');
+
+  const filename = `truckImages/${data.bookName}.${mimeTypes.detectExtension(
+    mimeType
+  )}`;
+  const file = admin.storage().bucket().file(filename);
+  await file.save(imageBuffer, {contentType: 'image/jpeg'});
+  const fileUrl = await file
+    .getSignedUrl({action: 'read', expires: '03-09-2491'})
+    .then((urls) => urls[0]);
+
+  return admin
+    .firestore()
+    .collection('trucks')
+    .add({
+      registration: data.truckRegistration,
+      imageUrl: fileUrl,
+      driver: admin.firestore().collection('drivers').doc(data.driverId),
+    });
 });
 
 exports.createPublicProfile = functions.https.onCall(async (data, context) => {
