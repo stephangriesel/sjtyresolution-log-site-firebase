@@ -1,6 +1,7 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const mimeTypes = require('mimetypes');
+const {default: axios} = require('axios');
 // const { user } = require('firebase-functions/lib/providers/auth');
 
 // // Create and Deploy Your First Cloud Functions
@@ -72,6 +73,11 @@ exports.createTruck = functions.https.onCall(async (data, context) => {
       driver: admin.firestore().collection('drivers').doc(data.driverId),
       condition: data.condition,
       odo: data.odo,
+    })
+    .then(() => {
+      return axios.post(
+        'https://api.netlify.com/build_hooks/60f41ff453b78473ec19f27c'
+      );
     });
 });
 
